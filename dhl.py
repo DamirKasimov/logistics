@@ -73,7 +73,6 @@ def find(x):
             # запись результата
             output.append({'Город': str(city), 'Адрес': str(address), 'Телефоны': (new_phones)})
             print(f'плохие города {wrong_cities}')
-            print(output)
     return output
 
 
