@@ -6,6 +6,7 @@ import re
 import pandas as pd
 
 
+# список городов возможного присутствия
 x = ('Курск', 'Магнитогорск', 'Махачкала', 'Мытищи', 'Нижневартовск',
      'Астрахань', 'Белгород', 'Брянск', 'Владимир', 'Волжский',
      'Грозный', 'Йошкар-Ола', 'Мурманск', 'Кемерово', 'Кострома',
@@ -16,6 +17,7 @@ x = ('Курск', 'Магнитогорск', 'Махачкала', 'Мытищ
      'Самара', 'Санкт-Петербург')
 
 
+# функция поиска адресов
 def find_all_indexes(input_str, search_str):
     l1 = []
     length = len(input_str)
@@ -30,44 +32,52 @@ def find_all_indexes(input_str, search_str):
 
 
 def find(x):
-    phones={}
+    phones = {}
     count = 0
-    wrong_cities=[]
-    output=[]
+    # список городов, в которых не оказалось офиса
+    wrong_cities = []
+    output = []
+    # перебор заданного списка городов
     for city in x:
         if len(output) < 12:
-            browser = webdriver.Chrome('D:\Dev\chrome_driver\chromedriver.exe')
+            # запуск браузера selenium
+            browser = webdriver.Chrome('D:\\Dev\\chrome_driver\\chromedriver.exe')
             browser.get('https://yandex.ru/search/?text=dhl+'+(city)+'&lr=37135')
-            count +=1
+            # для отслеживания прогресса
+            count += 1
             print(f'город {count} из {len(x)}')
             response = requests.get('https://yandex.ru/search/?text=dhl+'+(city)+'&lr=37135')
             print(response.status_code)
-            response= response.text
-            print(len(response))
+            response = response.text
             if response.find('aptcha') > 0:
                 print('Kaptcha')
-            indexes = find_all_indexes(response,'дрес организации')
+            # вызов функции поиска всех вхождений в текст response'а
+            indexes = find_all_indexes(response, 'дрес организации')
+            # ищем и обрабатываем телефоны
             search = re.compile('\+7\s\(\d\d\d[0-9)\s\-\)]{11}')
-            print((list(set(search.findall(response)))))
-            new_phones = [x for x in ((set(search.findall(response)))) if not x.startswith("+7 (495)") ]
+            new_phones = [x for x in ((set(search.findall(response)))) if not x.startswith("+7 (495)")]
             new_phones = (str(new_phones))[1:-1]
             new_phones = (new_phones).replace("\'", "")
-            print(new_phones)
             phones = (str(set(search.findall(response))))[1:-1]
             phones = phones.replace("\'", "")
+            # ищем и обрабатываем адреса
             try:
                 address = (response[indexes[0]+18:indexes[0]+100].split('"')[0])
+            # в случае ошибки -- офиса нет
             except IndexError:
                 print(f'{city} мимо')
                 wrong_cities.append(city)
                 address = ('нет офиса?')
             time.sleep(randint(20, 50))
             browser.close()
+            # запись результата
             output.append({'Город': str(city), 'Адрес': str(address), 'Телефоны': (new_phones)})
             print(f'плохие города {wrong_cities}')
+            print(output)
     return output
 
 
 result = (find(x))
+# запись в файл списка словарей с результатом
 df = pd.DataFrame.from_dict(result)
 df.to_excel('d:/Dev/dhl/output_dhl.xlsx')
