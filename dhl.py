@@ -1,4 +1,3 @@
-from ast import And
 import requests
 import time
 from random import randint
