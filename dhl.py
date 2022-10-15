@@ -1,3 +1,4 @@
+from ast import And
 import requests
 import time
 from random import randint
@@ -42,24 +43,23 @@ def find(x):
         if len(output) < 12:
             # запуск браузера selenium
             browser = webdriver.Chrome('D:\\Dev\\chrome_driver\\chromedriver.exe')
-            browser.get('https://yandex.ru/search/?text=dhl+'+(city)+'&lr=37135')
+            browser.get('https://yandex.ru/search/?text=dhl+'+(city))
             # для отслеживания прогресса
             count += 1
             print(f'город {count} из {len(x)}')
-            response = requests.get('https://yandex.ru/search/?text=dhl+'+(city)+'&lr=37135')
+            response = requests.get('https://yandex.ru/search/?text=dhl+'+(city))
             print(response.status_code)
             response = response.text
             if response.find('aptcha') > 0:
                 print('Kaptcha')
             # вызов функции поиска всех вхождений в текст response'а
             indexes = find_all_indexes(response, 'дрес организации')
-            # ищем и обрабатываем телефоны
-            search = re.compile('\+7\s\(\d\d\d[0-9)\s\-\)]{11}')
-            new_phones = [x for x in ((set(search.findall(response)))) if not x.startswith("+7 (495)")]
+            # ищем и обрабатываем телефоны с помощью regex
+            search = re.compile('\s\(\d\d\d[\) \d][\) \d][\s \d]\d\d\-\d\d-\d\d')
+            new_phones = [x for x in ((set(search.findall(response)))) if not x.startswith(' (800)') and not x.startswith(' (495)')]
             new_phones = (str(new_phones))[1:-1]
             new_phones = (new_phones).replace("\'", "")
             phones = (str(set(search.findall(response))))[1:-1]
-            phones = phones.replace("\'", "")
             # ищем и обрабатываем адреса
             try:
                 address = (response[indexes[0]+18:indexes[0]+100].split('"')[0])
